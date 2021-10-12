@@ -1,0 +1,64 @@
+---
+- name: new user creation
+  win_dsc:
+    resource_name: SqlServerLogin 
+    Name: "{{item.1.name}}"
+    ServerName: "{{server_name}}"
+    InstanceName: "{{instance_name}}"
+    LoginType: "{{item.0.type}}"
+    Ensure: "{{item.0.ensure}}"
+    LoginCredential_username: "{{item.1.name}}"
+    LoginCredential_password: "{{item.1.password}}"
+    LoginPasswordPolicyEnforced: False
+    LoginMustChangePassword: False
+    LoginPasswordExpirationEnabled: False
+  loop: "{{manage.list|subelements('user')}}"
+  when: item.0.type|lower == 'sqllogin'
+
+- name: new user creation
+  win_dsc:
+    resource_name: SqlServerLogin
+    Name: "{{item.1.name}}"
+    ServerName: "{{server_name}}"
+    InstanceName: "{{instance_name}}"
+    LoginType: "{{item.0.type}}"
+    Ensure: "{{item.0.ensure}}"
+  loop: "{{manage.list|subelements('user')}}"
+  when: item.0.type|lower == 'windowsuser'
+
+
+- name: adding user to database
+  win_dsc:
+    resource_name: SqlDatabaseUser
+    ServerName: "{{server_name}}" 
+    InstanceName: "{{instance_name}}"
+    Name: "{{item.1}}"
+    LoginName: "{{item.1}}"
+    DatabaseName: "{{item.0.database}}"
+    UserType: Login
+    Ensure: Present
+  loop: "{{(manage.role|default({}))|subelements('user')}}"
+  when: item.0.dbrole is defined
+
+- name: adding database role to user
+  win_dsc:
+    resource_name: SqlDatabaseRole
+    Name: "{{item.0.dbrole}}"
+    ServerName: "{{server_name}}"
+    InstanceName: "{{instance_name}}"
+    Database: "{{item.0.database}}"
+    MembersToInclude: "{{item.1}}"
+    Ensure: "{{item.0.ensure}}"
+  loop: "{{(manage.role|default({}))|subelements('user')}}"
+  when: item.0.dbrole is defined
+
+- name: adding server role to user
+  win_dsc:
+    resource_name: SqlServerRole
+    ServerRoleName: "{{item.0.serverrole}}"
+    ServerName: "{{server_name}}"
+    InstanceName: "{{instance_name}}"
+    MembersToInclude: "{{item.1}}"
+    Ensure: "{{item.0.ensure}}"
+  loop: "{{(manage.role|default({}))|subelements('user')}}"
+  when: item.0.serverrole is defined
