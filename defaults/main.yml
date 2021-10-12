@@ -1,0 +1,18 @@
+manage:
+  list:
+    - user:
+        - name: <domain_name>\<user_name>
+      ensure: present
+      type: WindowsUser
+    - user:
+        - name: <user_name>
+          password: xxxxxxxx
+      ensure: present
+      type: SqlLogin
+
+  role:
+    - serverrole: <role_name>
+      user: 
+        - <user_name>
+        - <domain_name>\<user_name>
+      ensure: present
